@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import { ThemeProvider } from 'next-themes';
+import { APP_DESCRIPTION, APP_NAME, SERVER_URL } from "@/lib/constants"
 import './globals.css';
 
 const inter = Inter({
@@ -8,8 +9,12 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: 'LitSplit',
-  description: 'Split any thing and everything',
+  title: {
+    template: `%s | LitSplit`,
+    default: APP_NAME,
+  },
+  description: APP_DESCRIPTION,
+  metadataBase: new URL(SERVER_URL),
 };
 
 export default function RootLayout({

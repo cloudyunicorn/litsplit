@@ -34,7 +34,7 @@ const Menu = () => {
             <Modetoggle />
             <Button asChild variant="ghost">
               <Link href="/cart">
-                <ShoppingCart /> Cart
+                <ShoppingCart /> Shop
               </Link>
             </Button>
             <UserButton />

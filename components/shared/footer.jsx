@@ -1,8 +1,14 @@
-import React from 'react'
+import { APP_NAME } from "@/lib/constants"
 
 const Footer = () => {
+  const currentYear = new Date().getFullYear()
+
   return (
-    <div>Footer</div>
+    <footer className="border-t">
+      <div className="p-5 text-center">
+        {currentYear} {APP_NAME}. All Rights Reserved.
+      </div>
+    </footer>
   )
 }
 
