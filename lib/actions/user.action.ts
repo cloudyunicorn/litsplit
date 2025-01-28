@@ -34,7 +34,7 @@ export async function signInWithCredentials(
 
 // Sign user out
 export async function signOutUser() {
-  await signOut();
+  await signOut({redirectTo: '/'});
 }
 
 // Sign up user
@@ -71,4 +71,16 @@ export async function signUpUser(prevState: unknown, formData: FormData) {
     }
     return { success: false, message: formatError(error) };
   }
+}
+
+export async function getAllUsers() {
+  return await prisma.user.findMany({
+    orderBy: {name: 'asc'}
+  })
+}
+
+export async function getUserById(id: string) {
+  return await prisma.user.findFirst({
+    where: { id: id },
+  });
 }
