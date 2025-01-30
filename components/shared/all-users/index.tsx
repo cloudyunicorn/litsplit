@@ -5,7 +5,6 @@ import React from 'react';
 
 const AllUserBox = async () => {
   const allUsers = await getAllUsers();
-  console.log(allUsers)
   return (
     <div className="p-4 px-10 flex-center gap-2">
       {allUsers.map((user) => (

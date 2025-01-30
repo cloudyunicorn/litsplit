@@ -5,7 +5,6 @@ import React from 'react';
 const UserPage = async (props: { params: Promise<{ id: string }> }) => {
   const { id } = await props.params;
   const user = await getUserById(id);
-  console.log(id)
   if (!user) notFound();
 
   return (

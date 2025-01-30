@@ -2,7 +2,7 @@ import React from 'react';
 import Modetoggle from './mode-toggle';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { EllipsisVertical, ShoppingCart } from 'lucide-react';
+import { AlignJustify, UserPen, Users } from 'lucide-react';
 import {
   Sheet,
   SheetContent,
@@ -19,7 +19,7 @@ const Menu = () => {
         <Modetoggle />
         <Button asChild variant="ghost">
           <Link href="/cart">
-            <ShoppingCart /> Cart
+            <Users /> Cart
           </Link>
         </Button>
         <UserButton />
@@ -27,14 +27,19 @@ const Menu = () => {
       <nav className="md:hidden">
         <Sheet>
           <SheetTrigger className="align-middle">
-            <EllipsisVertical />
+            <AlignJustify />
           </SheetTrigger>
           <SheetContent className="flex flex-col items-start">
             <SheetTitle>Menu</SheetTitle>
             <Modetoggle />
             <Button asChild variant="ghost">
-              <Link href="/cart">
-                <ShoppingCart /> Shop
+              <Link href="/add-group">
+                <Users /> Add Group
+              </Link>
+            </Button>
+            <Button asChild variant="ghost">
+              <Link href="/new-group">
+                <UserPen /> Profile
               </Link>
             </Button>
             <UserButton />

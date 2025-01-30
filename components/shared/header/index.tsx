@@ -5,7 +5,7 @@ import logoLight from '@/assets/logo-light.png'
 
 const Header = () => {
   return (
-    <header className="w-full border-b">
+    <header className="w-full border-b ">
       <div className="flex justify-between">
         <div data-hide-on-theme="dark" className="p-5">
           <Image src={logoDark} alt="logo" width={100} height={100}/>

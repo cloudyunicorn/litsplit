@@ -25,8 +25,32 @@ model User {
   createdAt     DateTime  @default(now()) @db.Timestamp(6)
   updatedAt     DateTime  @updatedAt
   totalBalance  Decimal   @default(0) @db.Decimal(12, 2)
-  account       Account[]
-  session       Session[]
+  groups        Group[]   @relation("GroupMembers")
+  expensesPaid  Expense[] @relation("PaidByUser")
+  expensesOwed  Expense[] @relation("SplitWithUsers")
+
+  accounts      Account[]
+  sessions      Session[]
+}
+
+model Group {
+  id        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name      String
+  members   User[]    @relation("GroupMembers")
+  expenses  Expense[]
+  createdAt DateTime  @default(now())
+}
+
+model Expense {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  amount      Decimal  @default(0) @db.Decimal(12, 2)
+  description String
+  paidById    String   @db.Uuid
+  paidBy      User     @relation("PaidByUser", fields: [paidById], references: [id])
+  groupId     String?  @db.Uuid
+  group       Group?   @relation(fields: [groupId], references: [id])
+  splitWith   User[]   @relation("SplitWithUsers")
+  createdAt   DateTime @default(now())
 }
 
 model Account {

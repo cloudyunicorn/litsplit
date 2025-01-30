@@ -84,3 +84,71 @@ export async function getUserById(id: string) {
     where: { id: id },
   });
 }
+
+export async function getGroupById(id: string) {
+  return await prisma.group.findFirst({
+    where: { id: id },
+  });
+}
+
+export const createGroupByUser = async (userId: string, groupName: string, memberIds: string[]) => {
+  try {
+    // Step 1: Create a new group
+    const newGroup = await prisma.group.create({
+      data: {
+        name: groupName,
+        members: {
+          connect: [{ id: userId }, ...memberIds.map(id => ({ id }))], // Connect the user and the other members to the group
+        },
+      },
+    });
+
+    // Step 2: Add the group to the user’s groups if needed
+    const userUpdate = await prisma.user.update({
+      where: { id: userId },
+      data: {
+        groups: {
+          connect: { id: newGroup.id },
+        },
+      },
+    });
+
+    return { newGroup, userUpdate };
+
+  } catch (error) {
+    if (isRedirectError(error)) {
+      throw error;
+    }
+    return { success: false, message: formatError(error) };
+  }
+};
+
+export const getAllGroupsByUser = async (userId: string | undefined) => {
+  try {
+    // Fetch all groups that the user is a member of
+    const groups = await prisma.group.findMany({
+      where: {
+        members: {
+          some: {
+            id: userId,  // Look for the user in the members field of each group
+          },
+        },
+      },
+      include: {
+        members: true,  // Optionally include members to see all members in the group
+        expenses: true, // Optionally include expenses within each group
+      },
+    });
+
+    if (groups.length === 0) {
+      throw new Error('No groups found for this user');
+    }
+
+    return groups;
+  } catch (error) {
+    if (isRedirectError(error)) {
+      throw error;
+    }
+    return { success: false, message: formatError(error) };
+  }
+};
