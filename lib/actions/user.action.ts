@@ -112,9 +112,9 @@ export async function getGroupById(id: string) {
 }
 
 export async function createGroup(
-  prevState: any,
+  prevState: unknown,
   formData: FormData
-): Promise<{ success: boolean; message: string; data?: any }> {
+): Promise<{ success: boolean; message: string; data?: unknown }> {
   try {
     const session = await auth();
     if (!session?.user?.email) {
