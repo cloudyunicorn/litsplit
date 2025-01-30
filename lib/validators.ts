@@ -32,3 +32,8 @@ export const signUpFormSchema = z
     message: "Passwords don't match",
     path: ['confirmPassword'],
   });
+
+export const createGroupSchema = z.object({
+  name: z.string().min(2, "Group name must be at least 2 characters"),
+  memberEmails: z.array(z.string().email("Invalid email address")).min(1),
+});

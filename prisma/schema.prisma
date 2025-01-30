@@ -14,43 +14,135 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model User {
-  id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  name          String    @default("NO_NAME")
-  email         String    @unique(map: "user_email_idx")
-  emailVerified DateTime? @db.Timestamp(6)
-  image         String?
-  password      String?
-  role          String    @default("user")
-  createdAt     DateTime  @default(now()) @db.Timestamp(6)
-  updatedAt     DateTime  @updatedAt
-  totalBalance  Decimal   @default(0) @db.Decimal(12, 2)
-  groups        Group[]   @relation("GroupMembers")
-  expensesPaid  Expense[] @relation("PaidByUser")
-  expensesOwed  Expense[] @relation("SplitWithUsers")
+enum SplitType {
+  EQUAL
+  PERCENTAGE
+  EXACT
+}
 
-  accounts      Account[]
-  sessions      Session[]
+model User {
+  id                String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name              String      @default("NO_NAME")
+  email             String      @unique(map: "user_email_idx")
+  emailVerified     DateTime?   @db.Timestamp(6)
+  image             String?
+  password          String?
+  role              String      @default("user")
+  totalBalance      Decimal     @default(0) @db.Decimal(12, 2)
+  preferredCurrency String      @default("USD")
+
+  userGroups        UserGroup[]
+  expensesPaid      Expense[]   @relation("PaidByUser")
+  creditorDebts     Debt[]      @relation("CreditorDebts")
+  debtorDebts       Debt[]      @relation("DebtorDebts")
+  invitations       Invitation[]
+  accounts          Account[]
+  sessions          Session[]
+
+  createdAt         DateTime    @default(now()) @db.Timestamp(6)
+  updatedAt         DateTime    @updatedAt
+
+  @@index([email])
+  @@index([createdAt])
+}
+
+model UserGroup {
+  userId    String    @db.Uuid
+  groupId   String    @db.Uuid
+  balance   Decimal   @default(0) @db.Decimal(12, 2)
+
+  user      User      @relation(fields: [userId], references: [id])
+  group     Group     @relation(fields: [groupId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@id([userId, groupId])
+  @@index([groupId])
 }
 
 model Group {
-  id        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id        String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   name      String
-  members   User[]    @relation("GroupMembers")
-  expenses  Expense[]
-  createdAt DateTime  @default(now())
+  currency  String      @default("USD")
+  isDeleted Boolean    @default(false)
+  deletedAt DateTime?
+  
+  // Relations
+  userGroups UserGroup[]
+  expenses   Expense[]
+  debts      Debt[]
+  invitations  Invitation[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([createdAt])
 }
 
 model Expense {
-  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  amount      Decimal  @default(0) @db.Decimal(12, 2)
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  amount      Decimal   @default(0) @db.Decimal(12, 2)
   description String
-  paidById    String   @db.Uuid
-  paidBy      User     @relation("PaidByUser", fields: [paidById], references: [id])
-  groupId     String?  @db.Uuid
-  group       Group?   @relation(fields: [groupId], references: [id])
-  splitWith   User[]   @relation("SplitWithUsers")
-  createdAt   DateTime @default(now())
+  splitType   SplitType @default(EQUAL)
+  splits      Json // Stores split details (percentages/exact amounts)
+  isDeleted   Boolean   @default(false)
+  deletedAt   DateTime?
+
+  paidById    String    @db.Uuid
+  paidBy      User      @relation("PaidByUser", fields: [paidById], references: [id])
+  groupId     String?   @db.Uuid
+  group       Group?    @relation(fields: [groupId], references: [id])
+  debts       Debt[]
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([groupId])
+  @@index([paidById])
+  @@index([createdAt])
+}
+
+model Debt {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  amount     Decimal  @db.Decimal(12, 2)
+  currency   String   @default("USD")
+  settled    Boolean  @default(false)
+
+  creditorId String   @db.Uuid
+  creditor   User    @relation("CreditorDebts", fields: [creditorId], references: [id])
+  debtorId   String   @db.Uuid
+  debtor     User    @relation("DebtorDebts", fields: [debtorId], references: [id])
+  expenseId  String   @db.Uuid
+  expense    Expense @relation(fields: [expenseId], references: [id])
+  groupId    String   @db.Uuid
+  group      Group   @relation(fields: [groupId], references: [id])
+
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([creditorId])
+  @@index([debtorId])
+  @@index([expenseId])
+  @@index([groupId])
+}
+
+model Invitation {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email     String
+  groupId   String   @db.Uuid
+  senderId  String   @db.Uuid
+  status    String   @default("PENDING") // PENDING, ACCEPTED, DECLINED
+
+  group     Group    @relation(fields: [groupId], references: [id])
+  sender    User     @relation(fields: [senderId], references: [id])
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([email, groupId])
+  @@index([groupId])
+  @@index([senderId])
 }
 
 model Account {
@@ -73,6 +165,7 @@ model Account {
 
   @@id([provider, providerAccountId])
 }
+
 
 model Session {
   sessionToken String   @id
