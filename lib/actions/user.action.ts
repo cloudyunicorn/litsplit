@@ -3,14 +3,15 @@
 import {
   createGroupSchema,
   signInFormSchema,
-  signUpFormSchema
+  signUpFormSchema,
 } from '../validators';
 import { auth, signIn, signOut } from '@/auth';
-import { prisma } from "@/db/prisma";
-import { hashSync } from "bcrypt-ts-edge";
-import { isRedirectError } from "next/dist/client/components/redirect-error";
-import { formatError } from "../utils";
-import { z } from "zod";
+import { prisma } from '@/db/prisma';
+import { hashSync } from 'bcrypt-ts-edge';
+import { isRedirectError } from 'next/dist/client/components/redirect-error';
+import { formatError } from '../utils';
+import { z } from 'zod';
+import { Prisma } from '@prisma/client';
 
 type CreateGroupForm = z.infer<typeof createGroupSchema>;
 
@@ -38,7 +39,7 @@ export async function signInWithCredentials(
 
 // Sign user out
 export async function signOutUser() {
-  await signOut({redirectTo: '/'});
+  await signOut({ redirectTo: '/' });
 }
 
 // Sign up user
@@ -79,7 +80,7 @@ export async function signUpUser(prevState: unknown, formData: FormData) {
 
 export async function getAllUsers() {
   const users = await prisma.user.findMany({
-    orderBy: { name: "asc" },
+    orderBy: { name: 'asc' },
   });
 
   return users.map((user) => ({
@@ -97,7 +98,19 @@ export async function getUserById(id: string) {
 export async function getGroupById(id: string) {
   const group = await prisma.group.findFirst({
     where: { id },
-    include: { userGroups: true }, // Include userGroups
+    include: {
+      userGroups: {
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
+        },
+      },
+    }, // Include userGroups
   });
 
   if (!group) return null;
@@ -118,13 +131,15 @@ export async function createGroup(
   try {
     const session = await auth();
     if (!session?.user?.email) {
-      return { success: false, message: "Not authenticated" };
+      return { success: false, message: 'Not authenticated' };
     }
 
     // Parse form data safely
     const rawData = {
-      name: formData.get("name") as string || "",
-      memberEmails: JSON.parse(formData.get("memberEmails") as string || "[]"),
+      name: (formData.get('name') as string) || '',
+      memberEmails: JSON.parse(
+        (formData.get('memberEmails') as string) || '[]'
+      ),
     };
 
     // Validate using Zod
@@ -137,7 +152,7 @@ export async function createGroup(
     });
 
     if (!currentUser) {
-      return { success: false, message: "User not found" };
+      return { success: false, message: 'User not found' };
     }
 
     // Transaction to create group and manage members
@@ -184,7 +199,7 @@ export async function createGroup(
           email,
           groupId: newGroup.id,
           senderId: currentUser.id,
-          status: "PENDING",
+          status: 'PENDING',
         })),
       });
 
@@ -195,12 +210,12 @@ export async function createGroup(
       success: true,
       message: `Group '${result.name}' created successfully!`,
       data: {
-    ...result,
-    userGroups: result.userGroups.map((ug) => ({
-      ...ug,
-      balance: ug.balance.toString(), // Convert Decimal
-    })),
-  },
+        ...result,
+        userGroups: result.userGroups.map((ug) => ({
+          ...ug,
+          balance: ug.balance.toString(), // Convert Decimal
+        })),
+      },
     };
   } catch (error) {
     if (isRedirectError(error)) throw error;
@@ -237,15 +252,15 @@ export async function getAllGroupsByUser() {
     if (!session?.user?.email) {
       return {
         success: false,
-        message: "Not authenticated",
-        data: null
+        message: 'Not authenticated',
+        data: null,
       };
     }
 
     // First get raw results from Prisma
     const rawGroups = await prisma.userGroup.findMany({
-      where: { 
-        userId: session.user.id 
+      where: {
+        userId: session.user.id,
       },
       include: {
         group: {
@@ -256,45 +271,110 @@ export async function getAllGroupsByUser() {
                   select: {
                     id: true,
                     name: true,
-                    email: true
-                  }
-                }
-              }
+                    email: true,
+                  },
+                },
+              },
             },
             expenses: {
               take: 3,
               orderBy: {
-                createdAt: 'desc'
-              }
-            }
-          }
-        }
-      }
+                createdAt: 'desc',
+              },
+            },
+          },
+        },
+      },
     });
 
     // Manually transform Decimal values to strings
-    const groups = rawGroups.map(userGroup => ({
+    const groups = rawGroups.map((userGroup) => ({
       ...userGroup,
       balance: userGroup.balance.toString(),
       group: {
         ...userGroup.group,
-        expenses: userGroup.group.expenses.map(expense => ({
+        expenses: userGroup.group.expenses.map((expense) => ({
           ...expense,
-          amount: expense.amount.toString()
-        }))
-      }
+          amount: expense.amount.toString(),
+        })),
+      },
     }));
 
     return {
       success: true,
-      message: "Groups fetched successfully",
-      data: groups
+      message: 'Groups fetched successfully',
+      data: groups,
     };
   } catch (error) {
     return {
       success: false,
       message: formatError(error),
-      data: null
+      data: null,
+    };
+  }
+}
+
+export async function createExpense({
+  groupId,
+  amount,
+  description,
+  paidById,
+  splitType,
+  splits,
+}: {
+  groupId: string;
+  amount: number;
+  description: string;
+  paidById: string;
+  splitType: 'EQUAL' | 'PERCENTAGE' | 'EXACT';
+  splits: { userId: string; amount: number }[];
+}) {
+  try {
+    const session = await auth();
+    if (!session?.user?.email) {
+      return { success: false, message: 'Not authenticated' };
+    }
+
+    if (!groupId || !paidById) {
+      throw new Error('groupId and paidById are required');
+    }
+
+    return await prisma.$transaction(async (tx) => {
+      // Create the expense
+      const expense = await tx.expense.create({
+        data: {
+          amount: new Prisma.Decimal(amount),
+          description,
+          paidById,
+          groupId,
+          splitType,
+          splits: {
+            create: splits.map((split) => ({
+              userId: split.userId,
+              amount: new Prisma.Decimal(split.amount),
+            })),
+          },
+        },
+        include: {
+          splits: true,
+          paidBy: true,
+        },
+      });
+
+      const sanitizedExpense = JSON.parse(JSON.stringify(expense));
+
+      return {
+        success: true,
+        message: 'Expense created successfully',
+        data: sanitizedExpense,
+      };
+    });
+  } catch (error) {
+    return {
+      success: false,
+      message:
+        error instanceof Error ? error.message : 'Failed to create expense',
+      data: null,
     };
   }
 }

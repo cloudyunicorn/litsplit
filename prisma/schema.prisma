@@ -38,6 +38,7 @@ model User {
   invitations       Invitation[]
   accounts          Account[]
   sessions          Session[]
+  ExpenseSplit      ExpenseSplit[]
 
   createdAt         DateTime    @default(now()) @db.Timestamp(6)
   updatedAt         DateTime    @updatedAt
@@ -85,7 +86,6 @@ model Expense {
   amount      Decimal   @default(0) @db.Decimal(12, 2)
   description String
   splitType   SplitType @default(EQUAL)
-  splits      Json // Stores split details (percentages/exact amounts)
   isDeleted   Boolean   @default(false)
   deletedAt   DateTime?
 
@@ -94,6 +94,7 @@ model Expense {
   groupId     String?   @db.Uuid
   group       Group?    @relation(fields: [groupId], references: [id])
   debts       Debt[]
+  splits      ExpenseSplit[]
 
   createdAt   DateTime  @default(now())
   updatedAt   DateTime @updatedAt
@@ -101,6 +102,17 @@ model Expense {
   @@index([groupId])
   @@index([paidById])
   @@index([createdAt])
+}
+
+model ExpenseSplit {
+  id        String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  amount    Decimal @db.Decimal(12, 2)
+  expense   Expense @relation(fields: [expenseId], references: [id])
+  expenseId String  @db.Uuid
+  user      User    @relation(fields: [userId], references: [id])
+  userId    String  @db.Uuid
+
+  @@unique([expenseId, userId])
 }
 
 model Debt {

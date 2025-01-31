@@ -1,41 +1,58 @@
-import { getGroupById, getUserById } from '@/lib/actions/user.action';
+import { AddExpensePopup } from '@/components/expenses/AddExpensePopup';
+import { getGroupById } from '@/lib/actions/user.action';
 import { notFound } from 'next/navigation';
 import React from 'react';
 
-const GroupPage = async (props: { params: Promise<{ id: string }> }) => {
-  const { id } = await props.params;
-  const group = await getGroupById(id);
-
+const GroupPage = async ({ params }: { params: Promise<{ id: string }> }) => {
+  const resolvedParams = await params;
+  const group = await getGroupById(resolvedParams.id);
   if (!group) notFound();
 
-  const memberNames = await Promise.all(
-    group.userGroups.map(async (member) => {
-      const memberName = await getUserById(member.userId);
-      return memberName;
-    })
-  );
-
-  console.log(memberNames);
+  // Get members directly from the group data
+  const members = group.userGroups.map((member) => ({
+    id: member.userId,
+    name: member.user.name, // Ensure your Prisma query includes user names
+  }));
+  console.log(group);
+  console.log(members);
 
   return (
     <>
       <section>
+        <AddExpensePopup groupId={group.id} members={members} />
         <div className="grid grid-cols-1 md:grid-cols-5">
-          {/* Images Column */}
-          <div className="col-span-2">
-            {/* <ProductImages images={user.image} /> */}
-          </div>
-          {/* Details Column */}
-          <div className="col-span-2 p-5">
+          {/* Rest of your layout */}
+          <div className="col-span-2 p-5 flex flex-col h-[400px]">
             <div className="flex flex-col gap-6">
-              <p>{group.name}</p>
               <h1 className="h3-bold">{group.name}</h1>
             </div>
             <div className="mt-10">
               <p className="font-semibold">Members</p>
-              {memberNames.map((member) => (
-                <p key={member?.id}>{member?.name}</p>
+              {members.map((member) => (
+                <p key={member.id}>{member.name}</p>
               ))}
+            </div>
+            <div className="mt-auto">
+              <div>
+                Created on :{' '}
+                <span className="text-sm text-muted-foreground">
+                  {new Date(group.createdAt).toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric',
+                  })}
+                </span>
+              </div>
+              <div>
+                Last Updated on :{' '}
+                <span className="text-sm text-muted-foreground">
+                  {new Date(group.updatedAt).toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric',
+                  })}
+                </span>
+              </div>
             </div>
           </div>
         </div>
