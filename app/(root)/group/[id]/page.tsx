@@ -11,10 +11,11 @@ const GroupPage = async ({ params }: { params: Promise<{ id: string }> }) => {
   // Get members directly from the group data
   const members = group.userGroups.map((member) => ({
     id: member.userId,
-    name: member.user.name, // Ensure your Prisma query includes user names
+    name: member.user.name,
+    balance: member.balance
   }));
-  console.log(group);
-  console.log(members);
+  // console.log(group);
+  // console.log(members);
 
   return (
     <>
@@ -29,7 +30,7 @@ const GroupPage = async ({ params }: { params: Promise<{ id: string }> }) => {
             <div className="mt-10">
               <p className="font-semibold">Members</p>
               {members.map((member) => (
-                <p key={member.id}>{member.name}</p>
+                <p key={member.id}>{member.name} <span>Balance : </span>{member.balance}</p>
               ))}
             </div>
             <div className="mt-auto">

@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { X } from "lucide-react";
 import { createGroupSchema } from "@/lib/validators";
 import { createGroup } from "@/lib/actions/user.action";
+import { useRouter } from "next/navigation";
 
 // Define the form schema based on Zod validation
 
@@ -27,6 +28,8 @@ export default function CreateGroupForm() {
       memberEmails: [] as string[],
     },
   });
+
+  const router = useRouter()
 
   const [emailInput, setEmailInput] = useState("");
   const memberEmails = watch("memberEmails") || [];
@@ -56,6 +59,7 @@ export default function CreateGroupForm() {
     const response = await createGroup(null, formData);
     if (response.success) {
       alert("Group created successfully!");
+      router.refresh()
     } else {
       alert(`Error: ${response.message}`);
     }

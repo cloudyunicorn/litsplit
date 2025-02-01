@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -21,6 +21,8 @@ import {
 import { Label } from '@/components/ui/label';
 import { useSession } from 'next-auth/react';
 import { createExpense } from '@/lib/actions/user.action';
+import { toast } from 'sonner';
+import { useRouter } from 'next/navigation';
 
 export function AddExpensePopup({
   groupId,
@@ -29,6 +31,7 @@ export function AddExpensePopup({
   groupId: string;
   members: { id: string; name: string }[];
 }) {
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [splitType, setSplitType] = useState<'EQUAL' | 'PERCENTAGE' | 'EXACT'>(
     'EQUAL'
@@ -106,6 +109,14 @@ export function AddExpensePopup({
     }
   };
 
+  useEffect(() => {
+    if (!open) {
+      setAmount("");
+      setDescription("");
+      setSplitType("EQUAL");
+    }
+  }, [open]);
+
   const handleSubmit = async () => {
     if (!session?.user?.id) {
       return alert('User not authenticated');
@@ -115,7 +126,7 @@ export function AddExpensePopup({
       const splits = calculateSplits();
       if (!splits) return;
 
-      await createExpense({
+      const response = await createExpense({
         groupId: groupId,
         amount: parseFloat(amount),
         description,
@@ -123,6 +134,13 @@ export function AddExpensePopup({
         splitType,
         splits,
       });
+
+      if (response.success) {
+        toast.success('Expense added successfully');
+        router.refresh(); // 🔥 Ensure page refreshes to show updated balances
+      } else {
+        toast.error(response.message);
+      }
 
       setOpen(false);
     } catch (error) {

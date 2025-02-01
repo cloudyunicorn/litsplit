@@ -96,7 +96,7 @@ export async function getUserById(id: string) {
 }
 
 export async function getGroupById(id: string) {
-  const group = await prisma.group.findFirst({
+  const group = await prisma.group.findUnique({
     where: { id },
     include: {
       userGroups: {
@@ -358,6 +358,38 @@ export async function createExpense({
         include: {
           splits: true,
           paidBy: true,
+        },
+      });
+
+      await Promise.all(
+        splits.map(async (split) => {
+          return tx.userGroup.update({
+            where: {
+              userId_groupId: {
+                userId: split.userId,
+                groupId,
+              },
+            },
+            data: {
+              balance: {
+                increment: new Prisma.Decimal(-split.amount), // Deduct split amount from user balance
+              },
+            },
+          });
+        })
+      );
+
+      await tx.userGroup.update({
+        where: {
+          userId_groupId: {
+            userId: paidById,
+            groupId,
+          },
+        },
+        data: {
+          balance: {
+            increment: new Prisma.Decimal(amount), // Increase payer's balance
+          },
         },
       });
 

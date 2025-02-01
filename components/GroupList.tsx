@@ -9,6 +9,7 @@ export async function UserGroups() {
   // const session = await auth();
 
   const data = await getAllGroupsByUser();
+  console.log(data.data)
 
   return (
     <div className="flex justify-center items-center h-full p-10">
