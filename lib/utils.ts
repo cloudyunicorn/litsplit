@@ -34,3 +34,67 @@ export function formatError(error: any) {
       : JSON.stringify(error.message);
   }
 }
+
+export function serializeDecimal(value: unknown): string {
+  if (typeof value === "object" && value !== null && "toString" in value) {
+    return value.toString();
+  }
+  return String(value);
+}
+
+
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function serializeRecord<T extends Record<string, unknown>>(record: T): T {
+  return Object.fromEntries(
+    Object.entries(record).map(([key, value]) => {
+      if (isPrismaDecimal(value)) {
+        // Convert Prisma.Decimal instances to strings
+        return [key, value.toString()];
+      }
+      if (value instanceof Date) {
+        // Convert Date instances to ISO strings
+        return [key, value.toISOString()];
+      }
+      if (Array.isArray(value)) {
+        // Recursively serialize each item in the array
+        return [key, value.map((item) => serializeItem(item))];
+      }
+      if (typeof value === "object" && value !== null) {
+        // Recursively serialize nested objects
+        return [key, serializeRecord(value as Record<string, unknown>)];
+      }
+      // For primitives (string, number, boolean, null, undefined), return as is
+      return [key, value];
+    })
+  ) as T;
+}
+
+// Helper function to serialize individual items
+function serializeItem(value: unknown): unknown {
+  if (isPrismaDecimal(value)) {
+    return value.toString();
+  }
+  if (value instanceof Date) {
+    return new Date(value).toLocaleDateString();
+  }
+  if (Array.isArray(value)) {
+    return value.map((item) => serializeItem(item));
+  }
+  if (typeof value === "object" && value !== null) {
+    return serializeRecord(value as Record<string, unknown>);
+  }
+  return value;
+}
+
+// Function to detect Prisma.Decimal instances without importing Prisma
+function isPrismaDecimal(value: unknown): value is { toString: () => string } {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    typeof (value as any).toString === "function" &&
+    typeof (value as any).toNumber === "function" &&
+    typeof (value as any).isInteger === "function" &&
+    typeof (value as any).add === "function" // Prisma.Decimal has math methods
+  );
+}

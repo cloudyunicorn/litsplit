@@ -3,13 +3,13 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { getAllGroupsByUser } from '@/lib/actions/user.action';
 import Link from 'next/link';
+import { format } from "date-fns";
 
 // Client component
 export async function UserGroups() {
   // const session = await auth();
 
   const data = await getAllGroupsByUser();
-  console.log(data.data)
 
   return (
     <div className="flex justify-center items-center h-full p-10">
@@ -21,7 +21,7 @@ export async function UserGroups() {
                 <CardHeader className="flex flex-row items-center justify-between">
                   <CardTitle>{group.group.name}</CardTitle>
                   <span className="text-sm text-muted-foreground">
-                    {new Date(group.group.createdAt).toLocaleDateString()}
+                    {format(group.group.createdAt, "dd MMM yyyy")}
                   </span>
                 </CardHeader>
                 <CardContent>

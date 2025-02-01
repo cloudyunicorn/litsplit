@@ -9,7 +9,7 @@ import { auth, signIn, signOut } from '@/auth';
 import { prisma } from '@/db/prisma';
 import { hashSync } from 'bcrypt-ts-edge';
 import { isRedirectError } from 'next/dist/client/components/redirect-error';
-import { formatError } from '../utils';
+import { formatError, serializeDecimal, serializeRecord } from '../utils';
 import { z } from 'zod';
 import { Prisma } from '@prisma/client';
 
@@ -96,7 +96,7 @@ export async function getUserById(id: string) {
 }
 
 export async function getGroupById(id: string) {
-  const group = await prisma.group.findUnique({
+  const group = await prisma.group.findFirst({
     where: { id },
     include: {
       userGroups: {
@@ -110,18 +110,39 @@ export async function getGroupById(id: string) {
           },
         },
       },
+      expenses: {
+        include: {
+          paidBy: {
+            select: {
+              name: true,
+              image: true
+            }
+          },
+          splits: true
+        },
+        orderBy: {
+          createdAt: 'desc'
+        }
+      }
     }, // Include userGroups
   });
 
   if (!group) return null;
 
-  return {
+  return serializeRecord({
     ...group,
-    userGroups: group.userGroups.map((ug) => ({
-      ...ug,
-      balance: ug.balance.toString(), // Convert Decimal to string
+    expenses: group.expenses.map(expense => ({
+      ...expense,
+      splits: expense.splits.map(split => ({
+        ...split,
+        amount: serializeDecimal(split.amount)
+      }))
     })),
-  };
+    userGroups: group.userGroups.map(userGroup => ({
+      ...userGroup,
+      balance: serializeDecimal(userGroup.balance)
+    }))
+  });
 }
 
 export async function createGroup(
