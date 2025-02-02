@@ -42,9 +42,6 @@ export function serializeDecimal(value: unknown): string {
   return String(value);
 }
 
-
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function serializeRecord<T extends Record<string, unknown>>(record: T): T {
   return Object.fromEntries(
     Object.entries(record).map(([key, value]) => {
@@ -92,9 +89,13 @@ function isPrismaDecimal(value: unknown): value is { toString: () => string } {
   return (
     typeof value === "object" &&
     value !== null &&
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     typeof (value as any).toString === "function" &&
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     typeof (value as any).toNumber === "function" &&
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     typeof (value as any).isInteger === "function" &&
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     typeof (value as any).add === "function" // Prisma.Decimal has math methods
   );
 }
