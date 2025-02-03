@@ -1,5 +1,5 @@
 import { auth } from "@/auth";
-import UserButton from "../shared/header/user-button";
+import { CreateGroupDialog } from "../CreateGroupForm";
 
 const DashboardHeader = async () => {
   const session = await auth();
@@ -8,7 +8,7 @@ const DashboardHeader = async () => {
     <header className="p-4 flex justify-between items-center">
       <h1 className="text-xl">Welcome, {session?.user?.name}</h1>
       <div className="flex items-center space-x-4">
-        <UserButton />
+        <CreateGroupDialog />
       </div>
     </header>
   );

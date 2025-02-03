@@ -1,26 +1,33 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { X } from "lucide-react";
+import { X, Plus } from "lucide-react";
 import { createGroupSchema } from "@/lib/validators";
 import { createGroup } from "@/lib/actions/user.action";
 import { useRouter } from "next/navigation";
 
-// Define the form schema based on Zod validation
-
-export default function CreateGroupForm() {
+export function CreateGroupDialog() {
+  const [open, setOpen] = useState(false);
   const {
     register,
     handleSubmit,
     setValue,
     watch,
     formState: { errors, isSubmitting },
+    reset,
   } = useForm({
     resolver: zodResolver(createGroupSchema),
     defaultValues: {
@@ -29,8 +36,7 @@ export default function CreateGroupForm() {
     },
   });
 
-  const router = useRouter()
-
+  const router = useRouter();
   const [emailInput, setEmailInput] = useState("");
   const memberEmails = watch("memberEmails") || [];
 
@@ -59,16 +65,28 @@ export default function CreateGroupForm() {
     const response = await createGroup(null, formData);
     if (response.success) {
       alert("Group created successfully!");
-      router.refresh()
+      router.refresh();
+      setOpen(false);
+      reset();
     } else {
       alert(`Error: ${response.message}`);
     }
   };
 
   return (
-    <Card className="w-full max-w-md mx-auto p-6 shadow-lg">
-      <CardContent>
-        <h2 className="text-xl font-semibold mb-4">Create a Group</h2>
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button>
+          <Plus className="mr-2 h-4 w-4" /> Create Group
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-[425px]">
+        <DialogHeader>
+          <DialogTitle>Create a Group</DialogTitle>
+          <DialogDescription>
+            Create a new group to split expenses with friends.
+          </DialogDescription>
+        </DialogHeader>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           {/* Group Name Input */}
@@ -89,6 +107,12 @@ export default function CreateGroupForm() {
                 value={emailInput}
                 onChange={(e) => setEmailInput(e.target.value)}
                 placeholder="Enter email"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    addMemberEmail();
+                  }
+                }}
               />
               <Button type="button" onClick={addMemberEmail}>
                 Add
@@ -107,7 +131,7 @@ export default function CreateGroupForm() {
               <Badge key={index} className="flex items-center space-x-2">
                 <span>{email}</span>
                 <X
-                  className="cursor-pointer w-4 h-4"
+                  className="cursor-pointer w-4 h-4 ml-2"
                   onClick={() => removeMember(email)}
                 />
               </Badge>
@@ -119,7 +143,7 @@ export default function CreateGroupForm() {
             {isSubmitting ? "Creating..." : "Create Group"}
           </Button>
         </form>
-      </CardContent>
-    </Card>
+      </DialogContent>
+    </Dialog>
   );
 }
