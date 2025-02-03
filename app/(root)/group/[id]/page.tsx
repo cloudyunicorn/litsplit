@@ -38,7 +38,7 @@ const GroupPage = async ({ params }: { params: Promise<{ id: string }> }) => {
       image: expense.paidBy.image || null,
     },
   }));
-  
+
   console.log('members', members);
   console.log('expenses', expenses);
 

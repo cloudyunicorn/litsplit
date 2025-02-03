@@ -22,7 +22,7 @@ type ExpenseType = {
 export function ExpenseList({ expenses }: { expenses: ExpenseType[] }) {
 
   return (
-    <ScrollArea className="h-[400px] w-full">
+    <ScrollArea className="h-[400px] w-full mt-6">
       <div className="space-y-4">
         {expenses.map((expense) => (
           <Card key={expense.id}>
