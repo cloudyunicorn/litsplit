@@ -106,6 +106,7 @@ export async function getGroupById(id: string) {
               id: true,
               name: true,
               email: true,
+              totalBalance: true,
             },
           },
         },
@@ -115,15 +116,40 @@ export async function getGroupById(id: string) {
           paidBy: {
             select: {
               name: true,
-              image: true
-            }
+              image: true,
+            },
           },
-          splits: true
+          splits: {
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  name: true,
+                },
+              },
+            },
+          },
+          debts: {
+            include: {
+              creditor: {
+                select: {
+                  id: true,
+                  name: true,
+                },
+              },
+              debtor: {
+                select: {
+                  id: true,
+                  name: true,
+                },
+              },
+            },
+          },
         },
         orderBy: {
-          createdAt: 'desc'
-        }
-      }
+          createdAt: 'desc',
+        },
+      },
     }, // Include userGroups
   });
 
@@ -131,17 +157,39 @@ export async function getGroupById(id: string) {
 
   return serializeRecord({
     ...group,
-    expenses: group.expenses.map(expense => ({
+    expenses: group.expenses.map((expense) => ({
       ...expense,
-      splits: expense.splits.map(split => ({
+      amount: serializeDecimal(expense.amount), // Convert Decimal to Number
+      splits: expense.splits.map((split) => ({
         ...split,
-        amount: serializeDecimal(split.amount)
-      }))
+        amount: serializeDecimal(split.amount), // Convert Decimal to Number
+        user: {
+          id: split.user.id,
+          name: split.user.name,
+        },
+      })),
+      debts: expense.debts.map((debt) => ({
+        id: debt.id,
+        amount: serializeDecimal(debt.amount), // Convert Decimal to Number
+        settled: debt.settled,
+        creditor: {
+          id: debt.creditor.id,
+          name: debt.creditor.name,
+        },
+        debtor: {
+          id: debt.debtor.id,
+          name: debt.debtor.name,
+        },
+      })),
     })),
-    userGroups: group.userGroups.map(userGroup => ({
+    userGroups: group.userGroups.map((userGroup) => ({
       ...userGroup,
-      balance: serializeDecimal(userGroup.balance)
-    }))
+      balance: serializeDecimal(userGroup.balance), // Convert Decimal to Number
+      user: {
+        id: userGroup.user.id,
+        name: userGroup.user.name,
+      },
+    })),
   });
 }
 
@@ -373,6 +421,14 @@ export async function createExpense({
             create: splits.map((split) => ({
               userId: split.userId,
               amount: new Prisma.Decimal(split.amount),
+              // creditorDebt:
+              //   paidById === split.userId
+              //     ? 0
+              //     : new Prisma.Decimal(split.amount), // Creditor debt (amount user owes)
+              // debtorDebt:
+              //   paidById === split.userId
+              //     ? new Prisma.Decimal(-split.amount)
+              //     : 0, // Debtor debt (amount payer is owed)
             })),
           },
         },
@@ -393,13 +449,13 @@ export async function createExpense({
             },
             data: {
               balance: {
-                increment: new Prisma.Decimal(-split.amount), // Deduct split amount from user balance
+                decrement: new Prisma.Decimal(split.amount), // Deduct split amount from user balance
               },
             },
           });
         })
       );
-
+      // Increase balance for payer (they are owed money)
       await tx.userGroup.update({
         where: {
           userId_groupId: {

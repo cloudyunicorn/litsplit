@@ -44,7 +44,7 @@ export const GroupBalance: React.FC<GroupBalanceProps> = ({ userId, userGroups }
   return (
     <Card className="p-4 mb-4">
       <div className="text-center">
-        <span className={cn('text-xl font-semibold', balanceClass)}>
+        <span className={cn('text-md font-semibold', balanceClass)}>
           {balanceText}
         </span>
       </div>

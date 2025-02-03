@@ -21,8 +21,8 @@ import {
 import { Label } from '@/components/ui/label';
 import { useSession } from 'next-auth/react';
 import { createExpense } from '@/lib/actions/user.action';
-import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
+import { useToast } from "@/hooks/use-toast";
 
 export function AddExpensePopup({
   groupId,
@@ -109,6 +109,8 @@ export function AddExpensePopup({
     }
   };
 
+  const {toast} = useToast();
+
   useEffect(() => {
     if (!open) {
       setAmount("");
@@ -136,10 +138,11 @@ export function AddExpensePopup({
       });
 
       if (response.success) {
-        toast.success('Expense added successfully');
+        toast({description: 'Expense added successfully', title: 'success'});
         router.refresh(); // 🔥 Ensure page refreshes to show updated balances
       } else {
-        toast.error(response.message);
+        toast({description: response.message, title: 'error'});
+        console.log(response.message);
       }
 
       setOpen(false);
