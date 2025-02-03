@@ -43,8 +43,8 @@ const Home = async () => {
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
               <UserButton />
               <Button asChild size="lg" variant="outline" className="backdrop-blur-sm">
-                <Link href="/about" className="flex items-center gap-2">
-                  Learn More <ArrowRight className="w-4 h-4" />
+                <Link href="/sign-up" className="flex items-center gap-2">
+                  Sign Up for Free <ArrowRight className="w-4 h-4" />
                 </Link>
               </Button>
             </div>
