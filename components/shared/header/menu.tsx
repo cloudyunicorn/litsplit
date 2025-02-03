@@ -24,14 +24,14 @@ const Menu = () => {
         </Button>
         <UserButton />
       </nav>
-      <nav className="md:hidden">
+      <nav className="md:hidden flex items-center gap-2">
+        <Modetoggle />
         <Sheet>
           <SheetTrigger className="align-middle">
             <AlignJustify />
           </SheetTrigger>
           <SheetContent className="flex flex-col items-start">
             <SheetTitle>Menu</SheetTitle>
-            <Modetoggle />
             <Button asChild variant="ghost">
               <Link href="/add-group">
                 <Users /> Add Group

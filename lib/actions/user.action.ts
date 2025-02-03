@@ -409,26 +409,40 @@ export async function createExpense({
     }
 
     return await prisma.$transaction(async (tx) => {
-      // Create the expense
+      // Adjust splits to account for rounding errors
+      const totalAmount = new Prisma.Decimal(amount);
+      const adjustedSplits = [...splits];
+      
+      if (splitType === 'EQUAL' || splitType === 'PERCENTAGE') {
+        const splitSum = splits.reduce((sum, split) => 
+          sum.plus(new Prisma.Decimal(split.amount)), 
+          new Prisma.Decimal(0)
+        );
+        
+        const difference = totalAmount.minus(splitSum);
+        
+        if (!difference.equals(0)) {
+          // Add the difference to the last split
+          const lastSplit = adjustedSplits[adjustedSplits.length - 1];
+          adjustedSplits[adjustedSplits.length - 1] = {
+            ...lastSplit,
+            amount: new Prisma.Decimal(lastSplit.amount).plus(difference).toNumber()
+          };
+        }
+      }
+
+      // Create the expense with splits
       const expense = await tx.expense.create({
         data: {
-          amount: new Prisma.Decimal(amount),
+          amount: totalAmount,
           description,
           paidById,
           groupId,
           splitType,
           splits: {
-            create: splits.map((split) => ({
+            create: adjustedSplits.map((split) => ({
               userId: split.userId,
               amount: new Prisma.Decimal(split.amount),
-              // creditorDebt:
-              //   paidById === split.userId
-              //     ? 0
-              //     : new Prisma.Decimal(split.amount), // Creditor debt (amount user owes)
-              // debtorDebt:
-              //   paidById === split.userId
-              //     ? new Prisma.Decimal(-split.amount)
-              //     : 0, // Debtor debt (amount payer is owed)
             })),
           },
         },
@@ -438,8 +452,27 @@ export async function createExpense({
         },
       });
 
+      // Create debt records for each split (except for the payer)
+      const debtsToCreate = adjustedSplits
+        .filter(split => split.userId !== paidById) // Exclude the payer
+        .map(split => ({
+          amount: new Prisma.Decimal(split.amount),
+          creditorId: paidById, // The person who paid
+          debtorId: split.userId, // The person who owes
+          expenseId: expense.id,
+          groupId,
+          settled: false,
+        }));
+
+      if (debtsToCreate.length > 0) {
+        await tx.debt.createMany({
+          data: debtsToCreate,
+        });
+      }
+
+      // Update user group balances
       await Promise.all(
-        splits.map(async (split) => {
+        adjustedSplits.map(async (split) => {
           return tx.userGroup.update({
             where: {
               userId_groupId: {
@@ -449,13 +482,14 @@ export async function createExpense({
             },
             data: {
               balance: {
-                decrement: new Prisma.Decimal(split.amount), // Deduct split amount from user balance
+                decrement: new Prisma.Decimal(split.amount),
               },
             },
           });
         })
       );
-      // Increase balance for payer (they are owed money)
+
+      // Update payer's balance
       await tx.userGroup.update({
         where: {
           userId_groupId: {
@@ -465,7 +499,7 @@ export async function createExpense({
         },
         data: {
           balance: {
-            increment: new Prisma.Decimal(amount), // Increase payer's balance
+            increment: totalAmount,
           },
         },
       });
@@ -481,8 +515,7 @@ export async function createExpense({
   } catch (error) {
     return {
       success: false,
-      message:
-        error instanceof Error ? error.message : 'Failed to create expense',
+      message: error instanceof Error ? error.message : 'Failed to create expense',
       data: null,
     };
   }

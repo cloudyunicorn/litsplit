@@ -35,7 +35,7 @@ const MemberBalance = ({
   console.log(members);
 
   return (
-    <div className="p-4 bg-white dark:bg-gray-900 rounded-lg shadow-md">
+    <div className="p-4 rounded-lg shadow-md">
       <h2 className="text-lg font-semibold mb-4">Group Members & Balances</h2>
       <div className="space-y-3">
         {members.map((member) => (
@@ -49,7 +49,6 @@ const MemberBalance = ({
               } font-semibold`}>
               ₹{member.balance}
             </span>
-            <br />
           </div>
         ))}
       </div>
