@@ -17,6 +17,7 @@ const Home = async () => {
         height={400}
         className="w-full"
       />
+      
       <div className="flex-center">
         <UserButton />
       </div>
