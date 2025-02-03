@@ -40,6 +40,7 @@ const SignInPage = async (props: {
               alt="LitSplit logo"
               priority={true}
             />
+            
           </Link>
           <CardTitle className="text-center">Sign In</CardTitle>
           <CardDescription className="text-center">
