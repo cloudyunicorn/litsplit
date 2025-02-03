@@ -29,6 +29,14 @@
   .h3-bold {
     @apply font-bold text-xl lg:text-2xl;
   }
+
+  .glass-effect {
+    @apply bg-background/60 backdrop-blur-md border border-border/50;
+  }
+  
+  .gradient-text {
+    @apply bg-gradient-to-r from-primary to-purple-600 text-transparent bg-clip-text;
+  }
 }
 
 @layer base {
