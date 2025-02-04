@@ -142,7 +142,6 @@ export function AddExpensePopup({
         router.refresh(); // 🔥 Ensure page refreshes to show updated balances
       } else {
         toast({description: response.message, title: 'error'});
-        console.log(response.message);
       }
 
       setOpen(false);

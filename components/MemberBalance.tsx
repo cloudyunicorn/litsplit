@@ -31,8 +31,6 @@ const MemberBalance = ({
         amount: Math.min(Math.abs(debtor.balance), creditor.balance),
       }))
   );
-  
-  console.log(members);
 
   return (
     <div className="p-4 rounded-lg shadow-md">

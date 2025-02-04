@@ -39,9 +39,6 @@ const GroupPage = async ({ params }: { params: Promise<{ id: string }> }) => {
     },
   }));
 
-  console.log('members', members);
-  console.log('expenses', expenses);
-
   return (
     <div className="container mx-auto p-4">
       <div className="flex justify-between items-center gap-4">
