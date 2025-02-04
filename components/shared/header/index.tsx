@@ -1,6 +1,5 @@
 import Menu from './menu';
-import Link from 'next/link';
-import Logo from "@/components/Logo";
+import Logo from '@/components/Logo';
 
 const Header = () => {
   return (
@@ -11,9 +10,7 @@ const Header = () => {
       {/* Existing structure with relative positioning */}
       <div className="relative flex justify-between">
         <div data-hide-on-theme="dark" className="p-5">
-          <Link href="/">
-            <Logo />
-          </Link>
+          <Logo />
         </div>
         <Menu />
       </div>
