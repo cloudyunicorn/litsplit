@@ -13,9 +13,9 @@ import { X, UserPlus } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { UserSearch, User } from '@/components/UserSearch';
 import { addGroupMember, removeGroupMember } from '@/lib/actions/user.action';
-import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
+import { useToast } from '@/hooks/use-toast';
 
 interface ManageGroupMembersProps {
   groupId: string;
@@ -28,13 +28,14 @@ interface ManageGroupMembersProps {
 
 export function ManageGroupMembers({
   groupId,
-   creatorId,
+  creatorId,
   currentMembers,
 }: ManageGroupMembersProps) {
   const [open, setOpen] = useState(false);
   const [members, setMembers] = useState(currentMembers);
   const router = useRouter();
-   const { data: session } = useSession();
+  const { data: session } = useSession();
+  const { toast } = useToast();
 
   if (session?.user?.id !== creatorId) {
     return null;
@@ -45,13 +46,14 @@ export function ManageGroupMembers({
       const response = await addGroupMember(groupId, user.email);
       if (response.success) {
         setMembers((prev) => [...prev, { user, balance: 0 }]);
-        toast.success(`Added ${user.name} to the group`);
+        toast({title: "Success" ,description:`Added ${user.name} to the group`});
+        setOpen(false);
         router.refresh();
       } else {
-        toast.error(response.message);
+        toast({title:"Error",description:response.message});
       }
     } catch {
-      toast.error('Failed to add member');
+      toast({title: "Error" ,description:'Failed to add member'});
     }
   };
 
@@ -62,13 +64,14 @@ export function ManageGroupMembers({
         setMembers((prev) =>
           prev.filter((member) => member.user.id !== userId)
         );
-        toast.success('Member removed from group');
+        toast({title: "Success" ,description:`Member removed from the group`});
+        setOpen(false);
         router.refresh();
       } else {
-        toast.error(response.message);
+        toast({title:"Error",description:response.message});
       }
     } catch {
-      toast.error('Failed to remove member');
+      toast({title: "Error" ,description:'Failed to remove member'});
     }
   };
 
