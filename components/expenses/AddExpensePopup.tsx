@@ -157,7 +157,7 @@ export function AddExpensePopup({
       <DialogTrigger asChild>
         <Button>Add Expense</Button>
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent className="fixed top-[30%] left-1/2 w-full px-4 transform -translate-x-1/2 md:top-1/2 md:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Add New Expense</DialogTitle>
           <DialogDescription>

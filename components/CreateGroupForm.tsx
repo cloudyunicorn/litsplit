@@ -84,7 +84,7 @@ export function CreateGroupDialog() {
           <Plus className="mr-2 h-4 w-4" /> Create Group
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="fixed top-[25%] left-1/2 w-full px-4 transform -translate-x-1/2 md:top-1/2 md:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Create a Group</DialogTitle>
           <DialogDescription>
