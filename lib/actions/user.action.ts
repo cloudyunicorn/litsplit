@@ -12,6 +12,7 @@ import { isRedirectError } from 'next/dist/client/components/redirect-error';
 import { formatError, serializeDecimal, serializeRecord } from '../utils';
 import { z } from 'zod';
 import { Prisma } from '@prisma/client';
+import { revalidatePath } from "next/cache";
 
 type CreateGroupForm = z.infer<typeof createGroupSchema>;
 
@@ -301,6 +302,193 @@ export async function createGroup(
       success: false,
       message: formatError(error),
       data: null,
+    };
+  }
+}
+
+export async function isCurrentUserGroupCreator(groupId: string, currentUserId: string) {
+  // Retrieve the group along with its userGroups ordered by createdAt ascending.
+  const group = await prisma.group.findUnique({
+    where: { id: groupId },
+    include: {
+      userGroups: {
+        orderBy: { createdAt: "asc" },
+        take: 1, // only need the first one (creator)
+        select: { userId: true },
+      },
+    },
+  });
+  if (!group || group.userGroups.length === 0) return false;
+  const creatorUserId = group.userGroups[0].userId;
+  return creatorUserId === currentUserId;
+}
+
+export async function getGroupWithMembers(groupId: string) {
+  const group = await prisma.group.findUnique({
+    where: { 
+      id: groupId,
+      isDeleted: false 
+    },
+    include: {
+      userGroups: {
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              image: true
+            }
+          }
+        }
+      }
+    }
+  });
+
+  return group;
+}
+
+export async function addGroupMember(groupId: string, memberEmail: string) {
+  try {
+    const session = await auth();
+    if (!session?.user || !session.user.id) {
+      return {
+        success: false,
+        message: "You must be logged in to manage group members"
+      };
+    }
+
+    const isCreator = await isCurrentUserGroupCreator(groupId, session.user.id!);
+    if (!isCreator) {
+      return {
+        success: false,
+        message: "Only the group creator can add members",
+      };
+    }
+
+    // Check if user exists
+    const userToAdd = await prisma.user.findUnique({
+      where: { email: memberEmail }
+    });
+
+    if (!userToAdd) {
+      return {
+        success: false,
+        message: "User not found"
+      };
+    }
+
+    // Check if user is already a member
+    const existingMember = await prisma.userGroup.findUnique({
+      where: {
+        userId_groupId: {
+          userId: userToAdd.id,
+          groupId: groupId
+        }
+      }
+    });
+
+    if (existingMember) {
+      return {
+        success: false,
+        message: "User is already a member of this group"
+      };
+    }
+
+    // Add member to group
+    await prisma.userGroup.create({
+      data: {
+        userId: userToAdd.id,
+        groupId: groupId,
+        balance: 0
+      }
+    });
+
+    revalidatePath(`/group/${groupId}`);
+
+    return {
+      success: true,
+      message: "Member added successfully"
+    };
+  } catch (error) {
+    console.error("Error adding group member:", error);
+    return {
+      success: false,
+      message: "Failed to add member to group"
+    };
+  }
+}
+
+export async function removeGroupMember(groupId: string, userId: string) {
+  try {
+    const session = await auth();
+    if (!session?.user || !session.user.id) {
+      return {
+        success: false,
+        message: "You must be logged in to manage group members"
+      };
+    }
+
+    const isCreator = await isCurrentUserGroupCreator(groupId, session.user.id!);
+    if (!isCreator) {
+      return {
+        success: false,
+        message: "Only the group creator can remove members",
+      };
+    }
+
+    // Check if group exists and get member count
+    const groupMembers = await prisma.userGroup.count({
+      where: { groupId }
+    });
+
+    if (groupMembers <= 1) {
+      return {
+        success: false,
+        message: "Cannot remove the last member from the group"
+      };
+    }
+
+    // Check if user has any unsettled debts in the group
+    const hasUnsettledDebts = await prisma.debt.findFirst({
+      where: {
+        groupId,
+        OR: [
+          { creditorId: userId },
+          { debtorId: userId }
+        ],
+        settled: false
+      }
+    });
+
+    if (hasUnsettledDebts) {
+      return {
+        success: false,
+        message: "Cannot remove member with unsettled debts"
+      };
+    }
+
+    // Remove member from group
+    await prisma.userGroup.delete({
+      where: {
+        userId_groupId: {
+          userId,
+          groupId
+        }
+      }
+    });
+
+    revalidatePath(`/group/${groupId}`);
+
+    return {
+      success: true,
+      message: "Member removed successfully"
+    };
+  } catch (error) {
+    console.error("Error removing group member:", error);
+    return {
+      success: false,
+      message: "Failed to remove member from group"
     };
   }
 }
