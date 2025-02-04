@@ -76,7 +76,7 @@ export function ManageGroupMembers({
   };
 
   return (
-    <>
+    <div className="mt-4">
       <Button variant="outline" onClick={() => setOpen(true)} className="gap-2">
         <UserPlus className="h-4 w-4" />
         Manage Members
@@ -151,6 +151,6 @@ export function ManageGroupMembers({
           </div>
         </DialogContent>
       </Dialog>
-    </>
+    </div>
   );
 }
