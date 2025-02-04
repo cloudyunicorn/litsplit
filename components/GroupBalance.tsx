@@ -3,7 +3,6 @@
 "use client";
 
 import React from 'react';
-import { Card } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 
 interface GroupBalanceProps {
@@ -42,12 +41,16 @@ export const GroupBalance: React.FC<GroupBalanceProps> = ({ userId, userGroups }
   }
 
   return (
-    <Card className="p-4 mb-4">
-      <div className="text-center">
-        <span className={cn('text-md font-semibold', balanceClass)}>
-          {balanceText}
-        </span>
-      </div>
-    </Card>
+    <div className={cn(
+      'h-10 px-4 flex items-center',
+      'border rounded-md',
+      'min-w-[140px] max-w-[200px]',
+      'border-opacity-40 text-center',
+      balanceClass
+    )}>
+      <span className="text-sm font-medium">
+        {balanceText}
+      </span>
+    </div>
   );
 };

@@ -42,7 +42,7 @@ const GroupPage = async ({ params }: { params: Promise<{ id: string }> }) => {
   return (
     <div className="container mx-auto p-4">
       <div className="flex justify-between items-center gap-4">
-        <h1 className="text-2xl font-bold">{group.name}</h1>
+        <h1 className="text-lg font-bold">{group.name}</h1>
         <GroupBalance
           userId={session?.user?.id || ''}
           userGroups={group.userGroups}

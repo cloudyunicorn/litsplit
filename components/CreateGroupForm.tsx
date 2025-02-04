@@ -18,6 +18,8 @@ import { X, Plus } from "lucide-react";
 import { createGroupSchema } from "@/lib/validators";
 import { createGroup } from "@/lib/actions/user.action";
 import { useRouter } from "next/navigation";
+import { User, UserSearch } from "./UserSearch";
+import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 
 export function CreateGroupDialog() {
   const [open, setOpen] = useState(false);
@@ -37,23 +39,22 @@ export function CreateGroupDialog() {
   });
 
   const router = useRouter();
-  const [emailInput, setEmailInput] = useState("");
   const memberEmails = watch("memberEmails") || [];
+  const [selectedUsers, setSelectedUsers] = useState<User[]>([]);
 
-  // Add email to the member list
-  const addMemberEmail = () => {
-    if (!emailInput.trim()) return;
-    if (memberEmails.includes(emailInput.trim())) return;
-    setValue("memberEmails", [...memberEmails, emailInput.trim()]);
-    setEmailInput("");
+  const addUser = (user: User) => {
+    if (memberEmails.includes(user.email)) return;
+    setValue("memberEmails", [...memberEmails, user.email]);
+    setSelectedUsers([...selectedUsers, user]);
   };
 
-  // Remove email from the member list
-  const removeMember = (email: string) => {
+  // Remove user from the list
+  const removeUser = (email: string) => {
     setValue(
       "memberEmails",
       memberEmails.filter((e) => e !== email)
     );
+    setSelectedUsers(selectedUsers.filter((user) => user.email !== email));
   };
 
   // Handle form submission
@@ -68,10 +69,12 @@ export function CreateGroupDialog() {
       router.refresh();
       setOpen(false);
       reset();
+      setSelectedUsers([]); // Clear selected users
     } else {
       alert(`Error: ${response.message}`);
     }
   };
+
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -98,45 +101,30 @@ export function CreateGroupDialog() {
             )}
           </div>
 
-          {/* Member Emails Input */}
+          {/* Search and Select Users */}
           <div>
             <label className="block text-sm font-medium">Add Members</label>
-            <div className="flex space-x-2">
-              <Input
-                type="email"
-                value={emailInput}
-                onChange={(e) => setEmailInput(e.target.value)}
-                placeholder="Enter email"
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault();
-                    addMemberEmail();
-                  }
-                }}
-              />
-              <Button type="button" onClick={addMemberEmail}>
-                Add
-              </Button>
-            </div>
-            {errors.memberEmails && (
-              <p className="text-red-500 text-xs mt-1">
-                {errors.memberEmails.message}
-              </p>
-            )}
+            <UserSearch mode="select" onSelectUser={addUser} excludeUsers={selectedUsers} />
           </div>
 
           {/* Display Added Members */}
-          <div className="flex flex-wrap gap-2 mt-2">
-            {memberEmails.map((email, index) => (
-              <Badge key={index} className="flex items-center space-x-2">
-                <span>{email}</span>
-                <X
-                  className="cursor-pointer w-4 h-4 ml-2"
-                  onClick={() => removeMember(email)}
-                />
-              </Badge>
-            ))}
-          </div>
+          {selectedUsers.length > 0 && (
+            <div className="flex flex-wrap gap-2 mt-2">
+              {selectedUsers.map((user) => (
+                <Badge key={user.id} className="flex items-center space-x-2 p-2">
+                  <Avatar className="h-6 w-6">
+                    <AvatarImage src={user.image || ""} />
+                    <AvatarFallback>{user.name[0].toUpperCase()}</AvatarFallback>
+                  </Avatar>
+                  <span>{user.name}</span>
+                  <X
+                    className="cursor-pointer w-4 h-4 ml-2"
+                    onClick={() => removeUser(user.email)}
+                  />
+                </Badge>
+              ))}
+            </div>
+          )}
 
           {/* Submit Button */}
           <Button type="submit" disabled={isSubmitting} className="w-full">

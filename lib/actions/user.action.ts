@@ -80,12 +80,21 @@ export async function signUpUser(prevState: unknown, formData: FormData) {
 
 export async function getAllUsers() {
   const users = await prisma.user.findMany({
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      image: true,
+    },
     orderBy: { name: 'asc' },
   });
 
-  return users.map((user) => ({
-    ...user,
-    totalBalance: user.totalBalance.toString(), // Convert Decimal
+  // Return only the fields we need, properly serialized
+  return users.map(user => ({
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    image: user.image,
   }));
 }
 
