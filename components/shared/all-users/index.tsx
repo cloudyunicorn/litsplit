@@ -14,7 +14,6 @@ const AllUserBox = async () => {
               <Link href={`/user/${user.id}`}></Link>
             </CardHeader>
             <CardContent className="p-4 grid gap-4">
-              <div className="text-xs">{user.role}</div>
               <Link href={`/user/${user.id}`}>
                 <h2 className="text-sm font-medium">{user.name}</h2>
               </Link>
