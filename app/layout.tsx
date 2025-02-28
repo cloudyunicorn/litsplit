@@ -26,6 +26,15 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        {/* Link to your manifest */}
+        <link rel="manifest" href="/manifest.json" />
+        {/* Theme color for mobile browsers */}
+        <meta name="theme-color" content="#ffffff" />
+        {/* Apple Touch Icon for iOS */}
+        <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
+        {/* You can add more meta tags here as needed */}
+      </head>
       <body className={`${inter.className} antialiased`}>
         <ThemeProvider
           attribute="class"
