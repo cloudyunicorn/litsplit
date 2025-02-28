@@ -30,7 +30,7 @@ export default function RootLayout({
         {/* Link to your manifest */}
         <link rel="manifest" href="/manifest.json" />
         {/* Theme color for mobile browsers */}
-        <meta name="theme-color" content="#ffffff" />
+        <meta name="theme-color" content="#8b3bc4" />
         {/* Apple Touch Icon for iOS */}
         <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
         {/* You can add more meta tags here as needed */}
