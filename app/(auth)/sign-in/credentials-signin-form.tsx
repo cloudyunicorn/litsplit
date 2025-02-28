@@ -18,7 +18,7 @@ const CreadentialSignInForm = () => {
   });
 
   const searchParams = useSearchParams();
-  const callbackUrl = searchParams.get('callbackUrl') || '/';
+  const callbackUrl = searchParams?.get('callbackUrl') || '/';
 
   const handleGoogleSignIn = () => {
     signIn('google', { callbackUrl });
